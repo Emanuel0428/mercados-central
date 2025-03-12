@@ -5,9 +5,9 @@ import { Home } from './pages/Home';
 import { Categories } from './pages/Categories';
 import { ProductDetail } from './pages/ProductDetail';
 import { Checkout } from './pages/Checkout';
-import { Register } from './pages/Register'; // Nueva página
-import { Login } from './pages/Login'; // Nueva página
-import { Account } from './pages/Account'; // Nueva página
+import { Register } from './pages/Register';
+import { Login } from './pages/Login';
+import { Account } from './pages/Account';
 import { useStore } from './store/useStore';
 
 function App() {
