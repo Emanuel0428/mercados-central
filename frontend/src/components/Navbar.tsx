@@ -15,7 +15,7 @@ export const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                Mercados Mi Punto
+                Mercados Central
               </span>
             </Link>
           </div>

@@ -13,15 +13,15 @@ export const Register = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/register', {
+      const response = await fetch('http://localhost:5000/api/auth/register', { // Actualiza la URL
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
       if (!response.ok) throw new Error('Error al registrarse');
       navigate('/login');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      console.log(error);
       setError('No se pudo completar el registro. Inténtalo de nuevo.');
     }
   };

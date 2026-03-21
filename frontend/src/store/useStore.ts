@@ -3,7 +3,9 @@ import { persist } from 'zustand/middleware';
 import { CartItem, Product } from '../types';
 
 interface User {
+  id: number;
   email: string;
+  name: string;
   role: 'user' | 'admin';
 }
 
@@ -20,6 +22,7 @@ interface Store {
   toggleDarkMode: () => void;
   setSearchQuery: (query: string) => void;
   setUser: (user: User) => void;
+  updateUser: (partial: Partial<Pick<User, 'name' | 'email'>>) => void;
   logout: () => void;
 }
 
@@ -57,6 +60,7 @@ export const useStore = create<Store>()(
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
       setSearchQuery: (query) => set({ searchQuery: query }),
       setUser: (user) => set({ user }),
+      updateUser: (partial) => set((state) => ({ user: state.user ? { ...state.user, ...partial } : null })),
       logout: () => set({ user: null }),
     }),
     {

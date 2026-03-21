@@ -1,4 +1,4 @@
-# Mercados Mi Punto
+# Mercados Central
 
 Una aplicación web de comercio electrónico para la venta de productos frescos y de alta calidad, con funcionalidades como carrito de compras, modo oscuro, autenticación de usuarios (registro e inicio de sesión), y un panel de usuario/administrador.
 

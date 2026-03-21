@@ -14,18 +14,18 @@ export const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch('http://localhost:5000/api/auth/login', { // Actualiza la URL
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       if (!response.ok) throw new Error('Credenciales inválidas');
       const data = await response.json();
-      localStorage.setItem('token', data.token); // Guardar token
-      setUser({ email: data.email, role: data.role });
+      localStorage.setItem('token', data.token);
+      setUser({ id: data.id, email: data.email, name: data.name, role: data.role });
       navigate('/account');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
+      console.log(err);
       setError('Correo o contraseña incorrectos.');
     }
   };
