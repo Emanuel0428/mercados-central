@@ -1,19 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-bg:       #0d1117;
+    --color-surface:  #151c25;
+    --color-surface2: #1e2a38;
+    --color-emerald:  #22c55e;
+    --color-emerald2: #16a34a;
+    --color-gold:     #f59e0b;
+    --color-cream:    #f1f5f0;
+    --color-muted:    #8b9caa;
+    --radius-card:    16px;
+    --transition:     0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-cream);
+    min-height: 100vh;
   }
+
+  /* Dark mode — same dark aesthetic, slight surface shift */
+  .dark body {
+    background-color: #080d12;
+  }
+
+  /* Light mode override */
+  body:not(.dark) {
+    background-color: #f8faf8;
+    color: #111827;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2d3f52; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #22c55e; }
 }
 
 @layer components {
+  /* ─── Buttons ─── */
   .btn-primary {
-    @apply px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-body font-medium text-sm
+           text-white transition-all duration-200
+           bg-primary-600 hover:bg-primary-500
+           shadow-emerald-sm hover:shadow-emerald-glow
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface;
+    font-family: 'DM Sans', sans-serif;
   }
-  
+
   .btn-secondary {
-    @apply px-4 py-2 bg-secondary text-gray-800 rounded-lg hover:bg-secondary/90 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium text-sm
+           transition-all duration-200
+           bg-gold text-surface-deep hover:bg-gold-light
+           shadow-gold-glow hover:shadow-gold-glow
+           focus:outline-none focus:ring-2 focus:ring-gold;
+    font-family: 'DM Sans', sans-serif;
   }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
+           text-cream/70 hover:text-cream hover:bg-white/5
+           transition-all duration-150 focus:outline-none;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ─── Cards ─── */
+  .card {
+    @apply rounded-2xl overflow-hidden bg-surface shadow-card
+           border border-white/5 transition-all duration-300;
+  }
+
+  .card:hover {
+    @apply shadow-card-hover border-primary-500/20;
+    transform: translateY(-4px);
+  }
+
+  /* ─── Inputs ─── */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-white/10 bg-surface-light
+           text-cream placeholder-white/30 text-sm
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-all duration-200;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .input-field-light {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
+           text-gray-800 placeholder-gray-400 text-sm
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-all duration-200;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ─── Glass ─── */
+  .glass {
+    background: rgba(13, 17, 23, 0.75);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .glass-light {
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  /* ─── Section headings ─── */
+  .section-label {
+    @apply text-xs font-semibold tracking-widest uppercase text-primary-400;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-cream;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .section-title-dark {
+    @apply text-3xl md:text-4xl font-bold text-gray-900 dark:text-cream;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* ─── Badge ─── */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .badge-emerald {
+    @apply badge bg-primary-500/20 text-primary-300 border border-primary-500/30;
+  }
+
+  .badge-gold {
+    @apply badge bg-gold/20 text-gold border border-gold/30;
+  }
+
+  /* ─── Stagger animations ─── */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+
+  .animate-on-load {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+}
+
+@layer utilities {
+  .font-display { font-family: 'Playfair Display', Georgia, serif; }
+  .font-body    { font-family: 'DM Sans', system-ui, sans-serif; }
+
+  .text-gradient-emerald {
+    background: linear-gradient(135deg, #22c55e, #86efac);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #f59e0b, #fcd34d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }

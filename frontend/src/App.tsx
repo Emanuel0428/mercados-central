@@ -23,7 +23,7 @@ function App() {
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
+      <div className={`min-h-screen font-body transition-colors duration-300 ${isDarkMode ? 'dark bg-surface-deep text-cream' : 'bg-gray-50 text-gray-900'}`}>
         <Navbar />
         <main className="pt-16">
           <Routes>
