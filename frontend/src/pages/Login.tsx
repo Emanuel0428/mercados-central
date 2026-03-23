@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogIn, Leaf, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { ArrowLeft, LogIn, Leaf, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 
@@ -8,26 +8,34 @@ export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useStore();
+  const { setUser, user } = useStore();
+
+  if (user) return <Navigate to="/account" replace />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      if (!response.ok) throw new Error('Credenciales inválidas');
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? 'Credenciales inválidas');
+      }
       localStorage.setItem('token', data.token);
       setUser({ id: data.id, email: data.email, name: data.name, role: data.role });
       navigate('/account');
     } catch (err) {
-      console.log(err);
-      setError('Correo o contraseña incorrectos.');
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión. Intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -103,9 +111,10 @@ export const Login = () => {
                 type="email"
                 placeholder="tu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(''); }}
                 className="input-field"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -118,9 +127,10 @@ export const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   className="input-field pr-11"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -134,10 +144,20 @@ export const Login = () => {
 
             <button
               type="submit"
-              className="btn-primary w-full py-3.5 text-base mt-2"
+              disabled={isLoading}
+              className="btn-primary w-full py-3.5 text-base mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <LogIn size={18} />
-              Iniciar sesión
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Iniciando sesión...
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  Iniciar sesión
+                </>
+              )}
             </button>
           </form>
 

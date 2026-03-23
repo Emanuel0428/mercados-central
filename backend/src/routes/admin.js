@@ -45,4 +45,20 @@ router.patch('/orders/:id/status', authenticateToken, (req, res) => {
   });
 });
 
+router.get('/users', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  db.all(
+    `SELECT u.id, u.name, u.email, u.role, COUNT(o.id) AS order_count
+     FROM users u
+     LEFT JOIN orders o ON o.user_id = u.id
+     GROUP BY u.id
+     ORDER BY u.id DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
 module.exports = router;

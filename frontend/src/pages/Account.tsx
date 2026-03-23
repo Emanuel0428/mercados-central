@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut, ChevronDown, ChevronUp, Package, Clock, CheckCircle, Loader2, User as UserIcon, Lock, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, LogOut, ChevronDown, ChevronUp, Package, Clock, CheckCircle, Loader2, User as UserIcon, Lock, ShoppingBag, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { Bar, Line, Pie } from 'react-chartjs-2';
@@ -29,6 +29,14 @@ interface Product {
   stock: number;
 }
 
+interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+  order_count: number;
+}
+
 interface OrderItem {
   id: number;
   order_id: number;
@@ -54,6 +62,8 @@ interface Order {
   created_at: string;
   payment_method: string;
   shipping_details: ShippingDetails | string;
+  payment_details?: string | { bill?: number } | null;
+  transfer_receipt?: string | null;
   email?: string;
   items?: OrderItem[];
 }
@@ -133,12 +143,13 @@ export const Account = () => {
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [activeTab, setActiveTab] = useState<'stock' | 'orders' | 'stats'>('orders');
+  const [activeTab, setActiveTab] = useState<'stock' | 'orders' | 'stats' | 'users'>('orders');
   const [userSection, setUserSection] = useState<'orders' | 'profile'>('orders');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<Record<number, OrderItem[]>>({});
   const [userOrders, setUserOrders] = useState<Order[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -188,12 +199,14 @@ export const Account = () => {
       setLoading(true);
       setError(null);
       try {
-        const [productsData, ordersData]: [Product[], Order[]] = await Promise.all([
+        const [productsData, ordersData, usersData]: [Product[], Order[], AdminUser[]] = await Promise.all([
           apiFetch(`${API}/api/admin/products`, token),
           apiFetch(`${API}/api/admin/orders`, token),
+          apiFetch(`${API}/api/admin/users`, token),
         ]);
         setProducts(productsData);
         setOrders(ordersData);
+        setAdminUsers(usersData);
 
         const itemsData: OrderItem[][] = await Promise.all(
           ordersData.map((o) => apiFetch(`${API}/api/admin/orders/${o.id}/items`, token))
@@ -438,7 +451,7 @@ export const Account = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Panel de Administrador</h2>
             <div className="flex gap-2 mb-6 flex-wrap">
-              {(['orders', 'stock', 'stats'] as const).map((tab) => (
+              {(['orders', 'users', 'stock', 'stats'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -446,7 +459,13 @@ export const Account = () => {
                     activeTab === tab ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
-                  {tab === 'orders' ? `Pedidos (${orders.length})` : tab === 'stock' ? 'Inventario' : 'Estadísticas'}
+                  {tab === 'orders'
+                    ? `Pedidos (${orders.length})`
+                    : tab === 'users'
+                    ? `Usuarios (${adminUsers.length})`
+                    : tab === 'stock'
+                    ? 'Inventario'
+                    : 'Estadísticas'}
                 </button>
               ))}
             </div>
@@ -509,8 +528,60 @@ export const Account = () => {
                                         <p><span className="font-medium">Dirección:</span> {shipping.address}, {shipping.city}</p>
                                         <p><span className="font-medium">Teléfono:</span> {shipping.phone}</p>
                                         <p><span className="font-medium">Pago:</span> {PAYMENT_LABELS[order.payment_method] ?? order.payment_method}</p>
+                                        {/* Cash: show bill and change */}
+                                        {order.payment_method === 'cash' && (() => {
+                                          const pd = typeof order.payment_details === 'string'
+                                            ? JSON.parse(order.payment_details || '{}')
+                                            : order.payment_details;
+                                          if (!pd?.bill) return null;
+                                          const change = pd.bill - order.total;
+                                          return (
+                                            <p>
+                                              <span className="font-medium">Billete:</span>{' '}
+                                              <span className="text-green-600 font-semibold">${Number(pd.bill).toLocaleString('es-CO')}</span>
+                                              {' → '}
+                                              <span className="font-medium">Vuelto:</span>{' '}
+                                              <span className="text-blue-600 dark:text-blue-400 font-semibold">${change.toLocaleString('es-CO')}</span>
+                                            </p>
+                                          );
+                                        })()}
+                                        {/* Transfer: receipt status */}
+                                        {order.payment_method === 'transfer' && (
+                                          <p>
+                                            <span className="font-medium">Comprobante:</span>{' '}
+                                            {order.transfer_receipt ? (
+                                              <a
+                                                href={`http://localhost:5000/uploads/${order.transfer_receipt}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary-400 underline hover:text-primary-300"
+                                              >
+                                                Ver imagen
+                                              </a>
+                                            ) : (
+                                              <span className="text-yellow-500">Pendiente</span>
+                                            )}
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
+                                    {/* Transfer: inline receipt preview */}
+                                    {order.payment_method === 'transfer' && order.transfer_receipt && (
+                                      <div>
+                                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Comprobante de pago</h4>
+                                        <a
+                                          href={`http://localhost:5000/uploads/${order.transfer_receipt}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          <img
+                                            src={`http://localhost:5000/uploads/${order.transfer_receipt}`}
+                                            alt="Comprobante"
+                                            className="w-full max-h-48 object-contain rounded-lg border dark:border-gray-700 hover:opacity-90 transition-opacity"
+                                          />
+                                        </a>
+                                      </div>
+                                    )}
                                     <div>
                                       <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cambiar estado</h4>
                                       <div className="flex gap-2 flex-wrap">
@@ -610,6 +681,67 @@ export const Account = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {/* ── Usuarios ── */}
+            {activeTab === 'users' && (
+              <div>
+                <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-white">Usuarios registrados</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Total: <span className="font-bold text-green-600">{adminUsers.length}</span>
+                  </p>
+                </div>
+                {adminUsers.length === 0 ? (
+                  <p className="text-center py-10 text-gray-400">No hay usuarios registrados.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400">
+                          <th className="p-3 rounded-l-lg">#</th>
+                          <th className="p-3">Nombre</th>
+                          <th className="p-3">Email</th>
+                          <th className="p-3">Rol</th>
+                          <th className="p-3 rounded-r-lg text-center">Pedidos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminUsers.map((u) => (
+                          <tr key={u.id} className="border-b dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                            <td className="p-3 font-mono text-gray-400">{u.id}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                                  <Users size={13} className="text-green-600 dark:text-green-400" />
+                                </div>
+                                <span className="font-medium text-gray-800 dark:text-white">{u.name}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-gray-500 dark:text-gray-400">{u.email}</td>
+                            <td className="p-3">
+                              {u.role === 'admin' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                                  Admin
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                  Usuario
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`font-semibold ${u.order_count > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                {u.order_count}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,14 +1,16 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initializeDatabase } = require('./lib/db');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
-const accountRoutes = require('./routes/account'); // Importar la nueva ruta
+const accountRoutes = require('./routes/account');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 initializeDatabase()
   .then(() => {

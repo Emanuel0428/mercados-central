@@ -73,7 +73,12 @@ const initializeDatabase = () => {
             );
 
             Promise.all(insertPromises)
-              .then(() => resolve())
+              .then(() => {
+                // Migrations: add new columns if they don't exist yet (errors are silently ignored)
+                db.run('ALTER TABLE orders ADD COLUMN payment_details TEXT', () => {});
+                db.run('ALTER TABLE orders ADD COLUMN transfer_receipt TEXT', () => {});
+                resolve();
+              })
               .catch(reject);
           });
         });

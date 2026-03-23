@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, UserPlus, Leaf, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useStore } from '../store/useStore';
 
 export const Register = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,9 @@ export const Register = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { user } = useStore();
+
+  if (user) return <Navigate to="/account" replace />;
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
