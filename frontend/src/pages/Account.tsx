@@ -16,10 +16,21 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import {
+  getProfile,
+  getUserOrders,
+  getAdminProducts,
+  getAdminOrders,
+  getAdminUsers,
+  getAdminOrderItems,
+  updateAdminOrderStatus,
+  markOrderReceived,
+  updateProfile,
+  updatePassword,
+  API_URL,
+} from '../lib/apiService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
-
-const API = 'http://localhost:5000';
 
 interface Product {
   id: string;
@@ -104,24 +115,6 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-async function apiFetch(url: string, token: string, options?: RequestInit) {
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(options?.headers ?? {}),
-    },
-  });
-  if (res.status === 401 || res.status === 403) {
-    throw new Error('TOKEN_EXPIRED');
-  }
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? 'Error del servidor');
-  }
-  return res.json();
-}
 
 export const Account = () => {
   const { user, logout, updateUser, setUser } = useStore();
@@ -134,7 +127,7 @@ export const Account = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    apiFetch(`${API}/api/account/profile`, token)
+    getProfile(token)
       .then((profile) => {
         if (profile.role !== userRef.current?.role) {
           setUser({ id: profile.id, name: profile.name, email: profile.email, role: profile.role });
@@ -179,7 +172,7 @@ export const Account = () => {
       setLoading(true);
       setError(null);
       try {
-        const data: Order[] = await apiFetch(`${API}/api/account/orders`, token);
+        const data: Order[] = await getUserOrders(token);
         setUserOrders(data);
       } catch (err) {
         if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
@@ -200,16 +193,16 @@ export const Account = () => {
       setError(null);
       try {
         const [productsData, ordersData, usersData]: [Product[], Order[], AdminUser[]] = await Promise.all([
-          apiFetch(`${API}/api/admin/products`, token),
-          apiFetch(`${API}/api/admin/orders`, token),
-          apiFetch(`${API}/api/admin/users`, token),
+          getAdminProducts(token),
+          getAdminOrders(token),
+          getAdminUsers(token),
         ]);
         setProducts(productsData);
         setOrders(ordersData);
         setAdminUsers(usersData);
 
         const itemsData: OrderItem[][] = await Promise.all(
-          ordersData.map((o) => apiFetch(`${API}/api/admin/orders/${o.id}/items`, token))
+          ordersData.map((o) => getAdminOrderItems(token, o.id))
         );
         const map: Record<number, OrderItem[]> = {};
         ordersData.forEach((o, i) => { map[o.id] = itemsData[i]; });
@@ -256,10 +249,7 @@ export const Account = () => {
     if (!token) return handleExpiredToken();
     setUpdatingStatus(orderId);
     try {
-      await apiFetch(`${API}/api/admin/orders/${orderId}/status`, token, {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      });
+      await updateAdminOrderStatus(token, orderId, status);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') handleExpiredToken();
@@ -273,7 +263,7 @@ export const Account = () => {
     if (!token) return handleExpiredToken();
     setUpdatingStatus(orderId);
     try {
-      await apiFetch(`${API}/api/account/orders/${orderId}/received`, token, { method: 'PATCH' });
+      await markOrderReceived(token, orderId);
       setUserOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'delivered' } : o)));
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') handleExpiredToken();
@@ -289,10 +279,7 @@ export const Account = () => {
     setProfileSaving(true);
     setProfileMsg(null);
     try {
-      const data = await apiFetch(`${API}/api/account/profile`, token, {
-        method: 'PATCH',
-        body: JSON.stringify({ name: profileName, email: profileEmail }),
-      });
+      const data = await updateProfile(token, { name: profileName, email: profileEmail });
       updateUser({ name: data.name, email: data.email });
       setProfileMsg({ type: 'ok', text: 'Perfil actualizado correctamente.' });
     } catch (err) {
@@ -314,10 +301,7 @@ export const Account = () => {
     setPasswordSaving(true);
     setPasswordMsg(null);
     try {
-      await apiFetch(`${API}/api/account/password`, token, {
-        method: 'PATCH',
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
+      await updatePassword(token, currentPassword, newPassword);
       setPasswordMsg({ type: 'ok', text: 'Contraseña actualizada correctamente.' });
       setCurrentPassword('');
       setNewPassword('');
@@ -551,7 +535,7 @@ export const Account = () => {
                                             <span className="font-medium">Comprobante:</span>{' '}
                                             {order.transfer_receipt ? (
                                               <a
-                                                href={`http://localhost:5000/uploads/${order.transfer_receipt}`}
+                                                href={`${API_URL}/uploads/${order.transfer_receipt}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-primary-400 underline hover:text-primary-300"
@@ -570,12 +554,12 @@ export const Account = () => {
                                       <div>
                                         <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Comprobante de pago</h4>
                                         <a
-                                          href={`http://localhost:5000/uploads/${order.transfer_receipt}`}
+                                          href={`${API_URL}/uploads/${order.transfer_receipt}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                         >
                                           <img
-                                            src={`http://localhost:5000/uploads/${order.transfer_receipt}`}
+                                            src={`${API_URL}/uploads/${order.transfer_receipt}`}
                                             alt="Comprobante"
                                             className="w-full max-h-48 object-contain rounded-lg border dark:border-gray-700 hover:opacity-90 transition-opacity"
                                           />

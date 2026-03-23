@@ -3,6 +3,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, UserPlus, Leaf, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
+import { register } from '../lib/apiService';
 
 export const Register = () => {
   const [email, setEmail] = useState('');
@@ -18,16 +19,10 @@ export const Register = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-      if (!response.ok) throw new Error('Error al registrarse');
+      await register(name, email, password);
       navigate('/login');
     } catch (error) {
-      console.log(error);
-      setError('No se pudo completar el registro. Inténtalo de nuevo.');
+      setError(error instanceof Error ? error.message : 'No se pudo completar el registro. Inténtalo de nuevo.');
     }
   };
 

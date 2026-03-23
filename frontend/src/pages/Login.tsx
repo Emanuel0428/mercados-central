@@ -3,6 +3,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, LogIn, Leaf, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
+import { login } from '../lib/apiService';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -20,15 +21,7 @@ export const Login = () => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Credenciales inválidas');
-      }
+      const data = await login(email, password);
       localStorage.setItem('token', data.token);
       setUser({ id: data.id, email: data.email, name: data.name, role: data.role });
       navigate('/account');

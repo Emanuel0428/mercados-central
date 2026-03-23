@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft, Plus, Minus, Trash2, CheckCircle, CreditCard, Banknote, ArrowRightLeft, Upload, ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const API = 'http://localhost:5000';
+import { createOrder, uploadReceipt } from '../lib/apiService';
 
 interface ShippingDetails {
   name: string;
@@ -71,18 +70,8 @@ export const Checkout = () => {
     setIsUploading(true);
     setUploadError(null);
     const token = localStorage.getItem('token');
-    const formData = new FormData();
-    formData.append('receipt', receiptFile);
     try {
-      const res = await fetch(`${API}/api/orders/${orderDetails.orderId}/receipt`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? 'Error al subir el comprobante');
-      }
+      await uploadReceipt(token!, orderDetails.orderId, receiptFile);
       setReceiptUploaded(true);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Error al subir el comprobante');
@@ -105,13 +94,12 @@ export const Checkout = () => {
     setIsSubmitting(true);
     try {
       const paymentDetails = paymentMethod === 'cash' ? { bill: cashBill } : null;
-      const response = await fetch(`${API}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ cart, shippingDetails, paymentMethod, paymentDetails }),
+      const data = await createOrder(token!, {
+        cart,
+        shippingDetails,
+        paymentMethod,
+        paymentDetails,
       });
-      if (!response.ok) throw new Error('Error al procesar la orden');
-      const data = await response.json();
       setOrderDetails(data);
       cart.forEach((item) => removeFromCart(item.id));
     } catch {

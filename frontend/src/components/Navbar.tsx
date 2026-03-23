@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShoppingCart, Sun, Moon, Menu, X, Trash2, User, Leaf, Plus, Minus } from 'lucide-react';
+import { Search, ShoppingCart, Sun, Moon, Menu, X, Trash2, User, Leaf, Plus, Minus, FlaskConical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
+import { IS_DEMO } from '../lib/apiService';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,9 +28,21 @@ export const Navbar = () => {
 
   return (
     <>
+      {/* Demo mode banner */}
+      {IS_DEMO && (
+        <div className="fixed top-0 w-full z-[60] bg-amber-500/95 backdrop-blur-sm text-amber-950 text-xs font-medium text-center py-1.5 px-4 flex items-center justify-center gap-2">
+          <FlaskConical size={13} />
+          <span>
+            Modo demo activo — los datos se guardan en tu navegador y no se envían a ningún servidor.
+            Credenciales de prueba:
+            <strong className="mx-1">admin@demo.com / admin123</strong>·
+            <strong className="mx-1">usuario@demo.com / usuario123</strong>
+          </span>
+        </div>
+      )}
       <nav
         ref={navRef}
-        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        className={`fixed w-full z-50 transition-all duration-300 ${IS_DEMO ? 'top-8' : 'top-0'} ${
           isDark ? 'glass' : 'glass-light'
         }`}
       >
